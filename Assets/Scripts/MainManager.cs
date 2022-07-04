@@ -1,27 +1,53 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class MainManager : MonoBehaviour
 {
+    public static MainManager MainInstance;
+
     public Brick BrickPrefab;
     public int LineCount = 6;
     public Rigidbody Ball;
 
+    public Text BestScore;
     public Text ScoreText;
     public GameObject GameOverText;
+    public string BSText;
     
     private bool m_Started = false;
     private int m_Points;
     
     private bool m_GameOver = false;
 
-    
+    private MenuManager menuManager;
+    private BestScore saveDataBetweenScenes;
+
+    private int point = 0;
+
+    private void Awake()
+    {
+        saveDataBetweenScenes = GameObject.Find("SaveDataBetweenScenes").GetComponent<BestScore>();
+        menuManager = GameObject.Find("MenuManager").GetComponent<MenuManager>();
+
+        BestScore.text = saveDataBetweenScenes.bestScoreText;
+
+        //Благодаря этому, имя сохраняется после каждого проигрыша.
+        //Переменной присваивается имя только в самый первый раз и не более
+        if (saveDataBetweenScenes.i < 2)
+        {
+            saveDataBetweenScenes.namePlayer = menuManager.nameText;
+            saveDataBetweenScenes.i++;
+        }
+
+
+    }
     // Start is called before the first frame update
     void Start()
-    {
+    {         
         const float step = 0.6f;
         int perLine = Mathf.FloorToInt(4.0f / step);
         
@@ -40,6 +66,7 @@ public class MainManager : MonoBehaviour
 
     private void Update()
     {
+       
         if (!m_Started)
         {
             if (Input.GetKeyDown(KeyCode.Space))
@@ -51,6 +78,7 @@ public class MainManager : MonoBehaviour
 
                 Ball.transform.SetParent(null);
                 Ball.AddForce(forceDir * 2.0f, ForceMode.VelocityChange);
+                BestScore.text = saveDataBetweenScenes.bestScoreText;
             }
         }
         else if (m_GameOver)
@@ -58,7 +86,9 @@ public class MainManager : MonoBehaviour
             if (Input.GetKeyDown(KeyCode.Space))
             {
                 SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+                
             }
+          
         }
     }
 
@@ -72,5 +102,20 @@ public class MainManager : MonoBehaviour
     {
         m_GameOver = true;
         GameOverText.SetActive(true);
+        if (m_Points > menuManager.highestPointInSession)
+        {
+            BestScore.text = "Best Score : " + saveDataBetweenScenes.namePlayer + " : " + m_Points;
+           
+              saveDataBetweenScenes.bestScoreText = BestScore.text;
+          
+            menuManager.SaveScore(saveDataBetweenScenes.bestScoreText, menuManager.highestPointInSession);
+          
+            menuManager.highestPointInSession = m_Points;
+        }
+         
     }
+
+    
+
+   
 }
